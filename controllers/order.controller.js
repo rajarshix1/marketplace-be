@@ -41,7 +41,7 @@ async function placeOrder( req, res) {
 async function getOrders(req, res) {
     try {
         const userId = req.user._id;
-        const orders = await Order.find({ userId }).populate('product');
+        const orders = await Order.find({ userId }).populate('product', 'name description');
         commonResponse(res, true, 'Success', orders, 200);
     } catch (error) {
         commonResponse(res, false, error.message, {}, 400);
@@ -53,7 +53,7 @@ async function getAllOrdersAdmin(req, res) {
         const { page = 1, limit = 10 } = req.query;
         const filter = {};
         const total = await Order.countDocuments(filter);
-        const orders = await Order.find().populate('product').populate('userId', 'name email').limit(limit).skip((page - 1) * limit).sort({ createdAt: -1 });
+        const orders = await Order.find().populate('product', 'name description').populate('userId', 'name email').limit(limit).skip((page - 1) * limit).sort({ createdAt: -1 });
         commonResponse(res, true, 'Success', {orders, total, page, totalPages: Math.ceil(total / limit)}, 200);
     } catch (error) {
         commonResponse(res, false, error.message, {}, 400);
