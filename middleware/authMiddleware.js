@@ -1,11 +1,12 @@
+const { commonResponse, verifyToken } = require('../utils/utils');
+const User = require('../models/user.model');
 async function auth(req, res, next) {
     try {
         const token = req.headers.authorization?.replace('Bearer ', '');
         if (!token) {
             return commonResponse(res, false, 'Failure', {}, 401);
         }
-        const jwt = require('../utils/utils');
-        const decoded = jwt.verifyToken(token);
+        const decoded = verifyToken(token);
         const user = await User.findById(decoded.userId).select('-password');
         if (!user) {
             return commonResponse(res, false, 'Failure', {}, 401);

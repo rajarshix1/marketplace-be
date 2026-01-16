@@ -3,10 +3,19 @@ const { commonResponse } = require('../utils/utils');
 
 async function createProduct(req, res) {
     try {
-        const product = await Product.create(req.body);
+        const { name, description, price, stockQuantity, categoryId } = req.body;
+        if (!name || !description || !price || !stockQuantity || !categoryId) {
+            return commonResponse(res, false, 'All fields are required', {}, 400);
+        }
+        const productExists = await Product.findOne({ name });
+        if (productExists) {
+            return commonResponse(res, false, 'Product already exists', {}, 400);
+        }
+        
+        const product = await Product.create({ name, description, price, stockQuantity, categoryId });
         commonResponse(res, true, 'Success', product, 201);
     } catch (err) {
-        commonResponse(res, false, err.message, {}, 400);
+        commonResponse(res, false, err.message, {});
     }
 }
 
@@ -26,9 +35,9 @@ async function getProducts(req, res) {
             .skip((page - 1) * limit)
             .sort({ createdAt: -1 });
         const total = await Product.countDocuments(filter);
-        commonResponse(res, true, 'Success', { products, total, page, totalPages: Math.ceil(total / limit) }, 200);
+        commonResponse(res, true, 'Success', { products, total, page, totalPages: Math.ceil(total / limit) });
     } catch (err) {
-        commonResponse(res, false, err.message, {}, 400);
+        commonResponse(res, false, err.message, {});
     }
 }
 
@@ -36,9 +45,9 @@ async function getProductById(req, res) {
     try {
         const product = await Product.findById(req.params.id).populate('categoryId');
         if (!product) return commonResponse(res, false, 'Product not found', {}, 404);
-        commonResponse(res, true, 'Success', product, 200);
+        commonResponse(res, true, 'Success', product);
     } catch (err) {
-        commonResponse(res, false, err.message, {}, 400);
+        commonResponse(res, false, err.message, {});
     }
 }
 
@@ -46,9 +55,9 @@ async function updateProduct(req, res) {
     try {
         const product = await Product.findByIdAndUpdate(req.params.id, req.body, { new: true });
         if (!product) return commonResponse(res, false, 'Product not found', {}, 404);
-        commonResponse(res, true, 'Success', product, 200);
+        commonResponse(res, true, 'Success', product);
     } catch (err) {
-        commonResponse(res, false, err.message, {}, 400);
+        commonResponse(res, false, err.message, {});
     }
 }
 
@@ -56,9 +65,9 @@ async function deleteProduct(req, res) {
     try {
         const product = await Product.findByIdAndDelete(req.params.id);
         if (!product) return commonResponse(res, false, 'Product not found', {}, 404);
-        commonResponse(res, true, 'Success', {}, 200);
+        commonResponse(res, true, 'Success', {});
     } catch (err) {
-        commonResponse(res, false, err.message, {}, 400);
+        commonResponse(res, false, err.message, {});
     }
 }
 
