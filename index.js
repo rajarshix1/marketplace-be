@@ -1,21 +1,19 @@
 const express = require('express');
 const mongoose = require('mongoose');
 require('dotenv').config();
-const bodyParser = require('body-parser');
+const authRoutes = require('./routes/auth.routes');
+const productRoutes = require('./routes/product.routes');
 
 const app = express();
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: true }));
+app.use(express.json());
 
-mongoose.connect(process.env.MONGO_URI).then(() => console.log('MongoDB connected', process.env.MONGO_URI))
+mongoose.connect(process.env.MONGO_URI).then(() => console.log('MongoDB connected'))
   .catch(err => console.log(err));
 
-app.use(express.json());
-const PORT = process.env.PORT || 3000;
-app.get('/', (req, res) => {
-    res.send('Hello from the server');
-});
+app.use('/api/auth', authRoutes);
+app.use('/api/products', productRoutes);
 
+const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
 });
