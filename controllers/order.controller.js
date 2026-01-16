@@ -5,11 +5,11 @@ const Product = require('../models/product.model.js');
 const { commonResponse } = require('../utils/utils.js');
 
 async function placeOrder( req, res) {
+    const session = await mongoose.startSession();
     try {
         const userId = req.user._id;
         const productId = req.body.productId;
         const quantity = req.body.quantity;
-        const session = await mongoose.startSession();
         session.startTransaction();
         const product = await Product.findOneAndUpdate(
             { _id: productId, stockQuantity: { $gte: quantity } },
@@ -17,7 +17,7 @@ async function placeOrder( req, res) {
             { session, new: true }
         );
         if (!product) {
-            throw new Error('Product not found');
+            throw new Error('Product not found or insufficient stock');
         }
         const [order] = await Order.create([{
             userId,
@@ -34,7 +34,7 @@ async function placeOrder( req, res) {
         commonResponse(res, true, 'Success', order, 201);
     } catch (error) {
         await session.abortTransaction();
-        commonResponse(res, false, err.message, {}, 400);
+        commonResponse(res, false, error.message, {}, 400);
     }
 }
 
@@ -44,7 +44,7 @@ async function getOrders(req, res) {
         const orders = await Order.find({ userId }).populate('product');
         commonResponse(res, true, 'Success', orders, 200);
     } catch (error) {
-        commonResponse(res, false, err.message, {}, 400);
+        commonResponse(res, false, error.message, {}, 400);
     }
 }
 
@@ -56,7 +56,7 @@ async function getAllOrdersAdmin(req, res) {
         const orders = await Order.find().populate('product').populate('userId', 'name email').limit(limit).skip((page - 1) * limit).sort({ createdAt: -1 });
         commonResponse(res, true, 'Success', {orders, total, page, totalPages: Math.ceil(total / limit)}, 200);
     } catch (error) {
-        commonResponse(res, false, err.message, {}, 400);
+        commonResponse(res, false, error.message, {}, 400);
     }
 }
 

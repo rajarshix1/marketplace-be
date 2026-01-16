@@ -14,15 +14,16 @@ async function createProduct(req, res) {
         
         const product = await Product.create({ name, description, price, stockQuantity, categoryId });
         commonResponse(res, true, 'Success', product, 201);
-    } catch (err) {
-        commonResponse(res, false, err.message, {});
+    } catch (error) {
+        commonResponse(res, false, error.message, {});
     }
 }
 
 async function getProducts(req, res) {
     try {
         const { page = 1, limit = 10, category, minPrice, maxPrice } = req.query;
-        const filter = {};
+        console.log(req.query);
+        const filter = {deleted: false};
         if (category) filter.categoryId = category;
         if (minPrice || maxPrice) {
             filter.price = {};
@@ -31,43 +32,49 @@ async function getProducts(req, res) {
         }
         const products = await Product.find(filter)
             .populate('categoryId')
-            .limit(limit * 1)
-            .skip((page - 1) * limit)
+            .limit(Number(limit) * 1)
+            .skip((Number(page) - 1) * Number(limit))
             .sort({ createdAt: -1 });
         const total = await Product.countDocuments(filter);
         commonResponse(res, true, 'Success', { products, total, page, totalPages: Math.ceil(total / limit) });
-    } catch (err) {
-        commonResponse(res, false, err.message, {});
+    } catch (error) {
+        commonResponse(res, false, error.message, {});
     }
 }
 
 async function getProductById(req, res) {
     try {
-        const product = await Product.findById(req.params.id).populate('categoryId');
+        const product = await Product.findOne({ _id: req.params.id, deleted: false }).populate('categoryId');
         if (!product) return commonResponse(res, false, 'Product not found', {}, 404);
         commonResponse(res, true, 'Success', product);
-    } catch (err) {
-        commonResponse(res, false, err.message, {});
+    } catch (error) {
+        commonResponse(res, false, error.message, {});
     }
 }
 
 async function updateProduct(req, res) {
     try {
-        const product = await Product.findByIdAndUpdate(req.params.id, req.body, { new: true });
+        const { name, description, price, stockQuantity } = req.body;
+        let updateData = {};
+        if (name) updateData.name = name;
+        if (description) updateData.description = description;
+        if (price) updateData.price = price;
+        if (stockQuantity) updateData.stockQuantity = stockQuantity;
+        const product = await Product.findByIdAndUpdate(req.params.id, updateData, { new: true });
         if (!product) return commonResponse(res, false, 'Product not found', {}, 404);
         commonResponse(res, true, 'Success', product);
-    } catch (err) {
-        commonResponse(res, false, err.message, {});
+    } catch (error) {
+        commonResponse(res, false, error.message, {});
     }
 }
 
 async function deleteProduct(req, res) {
     try {
-        const product = await Product.findByIdAndDelete(req.params.id);
+        const product = await Product.findByIdAndUpdate(req.params.id, { deleted: true }, { new: true });
         if (!product) return commonResponse(res, false, 'Product not found', {}, 404);
         commonResponse(res, true, 'Success', {});
-    } catch (err) {
-        commonResponse(res, false, err.message, {});
+    } catch (error) {
+        commonResponse(res, false, error.message, {});
     }
 }
 
